@@ -1,0 +1,45 @@
+id: SSH-SUCCESS-AFTER-FAIL-001
+title: Successful SSH login after repeated failures
+description: >-
+  A source address failed SSH authentication several times and then
+  successfully logged in. This can indicate a successful password guess or
+  credential-stuffing attempt and must be treated as possible account
+  compromise until proven otherwise.
+severity: critical
+status: stable
+author: SOCSift
+date: "2026-11-14"
+logsource:
+  product: linux
+  service: sshd
+detection:
+  condition: sequence
+  selection:
+    outcome: failure
+  followup:
+    outcome: success
+  threshold:
+    count: 3
+    window: 5m
+    group_by:
+      - source_ip
+  followup_window: 10m
+mitre:
+  tactic: Initial Access
+  technique: T1078
+  technique_name: Valid Accounts
+  subtechnique: T1078.003
+  url: https://attack.mitre.org/techniques/T1078/003/
+falsepositives:
+  - A user mistyping a password a few times before authenticating successfully.
+  - An automation account retrying after a rotated credential.
+recommended_actions:
+  - Treat the account as potentially compromised and verify the login with the user.
+  - Review commands and sessions from the account after the successful login.
+  - Escalate to N2 immediately; consider disabling the session or credential.
+references:
+  - https://attack.mitre.org/techniques/T1078/003/
+tags:
+  - attack.initial_access
+  - attack.t1078.003
+  - protocol.ssh

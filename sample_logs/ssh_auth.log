@@ -1,0 +1,68 @@
+Nov 14 07:55:10 soc-lab-web01 sshd[1901]: Accepted publickey for netops from 10.0.0.5 port 50221 ssh2: ED25519 SHA256:9xQ2fakeKeyFingerprintOnly000000000000000000000
+Nov 14 07:55:10 soc-lab-web01 sshd[1901]: pam_unix(sshd:session): session opened for user netops(uid=1002) by (uid=0)
+Nov 14 07:58:44 soc-lab-web01 sshd[1901]: pam_unix(sshd:session): session closed for user netops
+Nov 14 08:01:12 soc-lab-web01 sshd[2201]: Accepted publickey for alice from 10.0.0.15 port 51234 ssh2: RSA SHA256:fakeAliceKey000000000000000000000000000000
+Nov 14 08:01:12 soc-lab-web01 sshd[2201]: pam_unix(sshd:session): session opened for user alice(uid=1000) by (uid=0)
+Nov 14 08:05:01 soc-lab-web01 CRON[2301]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
+Nov 14 08:07:33 soc-lab-web01 sudo: alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/usr/bin/systemctl status nginx
+Nov 14 08:15:22 soc-lab-web01 sshd[2410]: Failed password for bob from 10.0.0.22 port 50110 ssh2
+Nov 14 08:15:29 soc-lab-web01 sshd[2410]: Accepted password for bob from 10.0.0.22 port 50110 ssh2
+Nov 14 08:15:29 soc-lab-web01 sshd[2410]: pam_unix(sshd:session): session opened for user bob(uid=1001) by (uid=0)
+Nov 14 08:16:04 soc-lab-web01 sshd[2410]: pam_unix(sshd:session): session closed for user bob
+Nov 14 08:22:10 soc-lab-web01 sshd[2515]: Accepted publickey for carol from 10.0.0.18 port 51744 ssh2: ED25519 SHA256:fakeCarolKey0000000000000000000000000000000
+Nov 14 08:22:10 soc-lab-web01 sshd[2515]: pam_unix(sshd:session): session opened for user carol(uid=1003) by (uid=0)
+Nov 14 08:30:01 soc-lab-web01 CRON[2600]: (root) CMD (/usr/local/bin/soc-lab-healthcheck.sh)
+Nov 14 08:45:09 soc-lab-web01 sshd[2711]: Invalid user alicee from 10.0.0.77 port 40122
+Nov 14 08:45:15 soc-lab-web01 sshd[2711]: Connection closed by 10.0.0.77 port 40122 [preauth]
+Nov 14 08:58:44 soc-lab-web01 sshd[2201]: pam_unix(sshd:session): session closed for user alice
+Nov 14 09:00:00 soc-lab-web01 sshd[2800]: Accepted publickey for carol from 2001:db8::20 port 51888 ssh2: ED25519 SHA256:fakeCarolIPv6Key0000000000000000000000000
+Nov 14 09:00:00 soc-lab-web01 sshd[2800]: pam_unix(sshd:session): session opened for user carol(uid=1003) by (uid=0)
+Nov 14 09:02:33 soc-lab-web01 sshd[2800]: pam_unix(sshd:session): session closed for user carol
+Nov 14 09:10:02 soc-lab-web01 sshd[3001]: Invalid user admin from 192.0.2.66 port 44001
+Nov 14 09:10:18 soc-lab-web01 sshd[3002]: Invalid user oracle from 192.0.2.66 port 44002
+Nov 14 09:10:31 soc-lab-web01 sshd[3003]: Invalid user test from 192.0.2.66 port 44003
+Nov 14 09:10:47 soc-lab-web01 sshd[3004]: Invalid user ubuntu from 192.0.2.66 port 44004
+Nov 14 09:11:05 soc-lab-web01 sshd[3005]: Invalid user postgres from 192.0.2.66 port 44005
+Nov 14 09:11:20 soc-lab-web01 sshd[3005]: Connection closed by 192.0.2.66 port 44005 [preauth]
+Nov 14 09:20:10 soc-lab-web01 sshd[3110]: Accepted publickey for svc-deploy from 10.0.0.30 port 52210 ssh2: RSA SHA256:fakeDeployKey000000000000000000000000000
+Nov 14 09:20:10 soc-lab-web01 sshd[3110]: pam_unix(sshd:session): session opened for user svc-deploy(uid=1004) by (uid=0)
+Nov 14 09:20:52 soc-lab-web01 sshd[3110]: pam_unix(sshd:session): session closed for user svc-deploy
+Nov 14 09:35:01 soc-lab-web01 CRON[3200]: (root) CMD (/usr/local/bin/soc-lab-healthcheck.sh)
+Nov 14 09:45:33 soc-lab-web01 sshd[3300]: Accepted publickey for netops from 10.0.0.9 port 53001 ssh2: ED25519 SHA256:fakeNetopsKey00000000000000000000000000000
+Nov 14 09:46:12 soc-lab-web01 sudo: netops : TTY=pts/2 ; PWD=/home/netops ; USER=root ; COMMAND=/usr/bin/apt-get update
+Nov 14 09:50:00 soc-lab-web01 sshd[3355]: Received disconnect from 203.0.113.200 port 55001:11: Bye Bye [preauth]
+Nov 14 10:00:02 soc-lab-web01 sshd[3500]: Accepted publickey for alice from 10.0.0.15 port 54001 ssh2: RSA SHA256:fakeAliceKey000000000000000000000000000000
+Nov 14 10:00:02 soc-lab-web01 sshd[3500]: pam_unix(sshd:session): session opened for user alice(uid=1000) by (uid=0)
+Nov 14 10:02:11 soc-lab-web01 sshd[4401]: Failed password for alice from 203.0.113.45 port 50001 ssh2
+Nov 14 10:02:29 soc-lab-web01 sshd[4402]: Failed password for root from 203.0.113.45 port 50002 ssh2
+Nov 14 10:02:30 soc-lab-web01 sshd[4402]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=203.0.113.45  user=root
+Nov 14 10:02:44 soc-lab-web01 sshd[4403]: Failed password for admin from 203.0.113.45 port 50003 ssh2
+Nov 14 10:03:01 soc-lab-web01 sshd[4404]: Failed password for test from 203.0.113.45 port 50004 ssh2
+Nov 14 10:03:19 soc-lab-web01 sshd[4405]: Failed password for deploy from 203.0.113.45 port 50005 ssh2
+Nov 14 10:03:36 soc-lab-web01 sshd[4406]: Failed password for backup from 203.0.113.45 port 50006 ssh2
+Nov 14 10:03:52 soc-lab-web01 sshd[4406]: error: maximum authentication attempts exceeded for invalid user backup from 203.0.113.45 port 50006 ssh2 [preauth]
+Nov 14 10:03:55 soc-lab-web01 sshd[4406]: Connection closed by 203.0.113.45 port 50006 [preauth]
+Nov 14 10:04:01 soc-lab-web01 sshd[3500]: pam_unix(sshd:session): session closed for user alice
+Nov 14 10:15:01 soc-lab-web01 CRON[4600]: (root) CMD (/usr/local/bin/soc-lab-healthcheck.sh)
+Nov 14 10:20:14 soc-lab-web01 sshd[4800]: Failed password for alice from 198.51.100.77 port 51101 ssh2
+Nov 14 10:20:42 soc-lab-web01 sshd[4801]: Failed password for alice from 198.51.100.77 port 51102 ssh2
+Nov 14 10:21:09 soc-lab-web01 sshd[4802]: Failed password for alice from 198.51.100.77 port 51103 ssh2
+Nov 14 10:21:31 soc-lab-web01 sshd[4803]: Accepted password for alice from 198.51.100.77 port 51104 ssh2
+Nov 14 10:21:31 soc-lab-web01 sshd[4803]: pam_unix(sshd:session): session opened for user alice(uid=1000) by (uid=0)
+Nov 14 10:21:45 soc-lab-web01 sshd[4803]: pam_unix(sshd:session): session closed for user alice
+Nov 14 10:30:00 soc-lab-web01 CRON[4950]: (root) CMD (/usr/local/bin/soc-lab-healthcheck.sh)
+Nov 14 10:40:00 soc-lab-web01 sshd[5100]: Accepted publickey for alice from 10.0.0.15 port 55001 ssh2: RSA SHA256:fakeAliceKey000000000000000000000000000000
+Nov 14 10:40:00 soc-lab-web01 sshd[5100]: pam_unix(sshd:session): session opened for user alice(uid=1000) by (uid=0)
+Nov 14 10:44:00 soc-lab-web01 sshd[5100]: pam_unix(sshd:session): session closed for user alice
+Nov 14 11:00:11 soc-lab-web01 sshd[5300]: Did not receive identification string from 203.0.113.200 port 55002
+Nov 14 11:04:12 soc-lab-web01 sshd[5400]: Failed password for root from 203.0.113.99 port 60221 ssh2
+Nov 14 11:04:30 soc-lab-web01 sshd[5401]: Accepted publickey for root from 203.0.113.99 port 60222 ssh2: RSA SHA256:fakeRootKey000000000000000000000000000000
+Nov 14 11:04:30 soc-lab-web01 sshd[5401]: pam_unix(sshd:session): session opened for user root(uid=0) by (uid=0)
+Nov 14 11:04:42 soc-lab-web01 sshd[5401]: pam_unix(sshd:session): session closed for user root
+Nov 14 11:12:00 soc-lab-web01 sshd[5600]: Accepted publickey for bob from 10.0.0.22 port 56001 ssh2: ED25519 SHA256:fakeBobKey00000000000000000000000000000000
+Nov 14 11:12:00 soc-lab-web01 sshd[5600]: pam_unix(sshd:session): session opened for user bob(uid=1001) by (uid=0)
+Nov 14 11:12:30 soc-lab-web01 sshd[5600]: pam_unix(sshd:session): session closed for user bob
+Nov 14 11:20:00 soc-lab-web01 sshd[5800]: Accepted publickey for alice from 10.0.0.15 port 57001 ssh2: RSA SHA256:fakeAliceKey000000000000000000000000000000
+Nov 14 11:20:00 soc-lab-web01 sshd[5800]: pam_unix(sshd:session): session opened for user alice(uid=1000) by (uid=0)
+Nov 14 11:20:11 soc-lab-web01 sshd[5800]: pam_unix(sshd:session): session closed for user alice
+Nov 14 11:30:01 soc-lab-web01 CRON[6000]: (root) CMD (/usr/local/bin/soc-lab-healthcheck.sh)

@@ -1,0 +1,41 @@
+id: SSH-USER-ENUM-001
+title: SSH invalid-user enumeration
+description: >-
+  Multiple authentication attempts used usernames that do not exist on the
+  host. Repeating this from one source is consistent with account enumeration
+  before a brute-force or password-spraying attempt.
+severity: medium
+status: stable
+author: SOCSift
+date: "2026-11-14"
+logsource:
+  product: linux
+  service: sshd
+detection:
+  condition: threshold
+  selection:
+    event_type: invalid_user
+  threshold:
+    count: 3
+    window: 5m
+    group_by:
+      - source_ip
+mitre:
+  tactic: Discovery
+  technique: T1087
+  technique_name: Account Discovery
+  subtechnique: T1087.001
+  url: https://attack.mitre.org/techniques/T1087/001/
+falsepositives:
+  - A user repeatedly mistyping their own username.
+  - An approved asset inventory or vulnerability scan.
+recommended_actions:
+  - Check whether the source is external and whether it attempted valid accounts.
+  - Review the usernames tried for clues about targeted services or people.
+  - Escalate to N2 if the source is external or the attempts continue.
+references:
+  - https://attack.mitre.org/techniques/T1087/001/
+tags:
+  - attack.discovery
+  - attack.t1087.001
+  - protocol.ssh

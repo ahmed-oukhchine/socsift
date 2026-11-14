@@ -1,0 +1,88 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "socsift"
+dynamic = ["version"]
+description = "Blue-team triage CLI for SSH, Windows, web, and syslog evidence."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "SOCSift contributors" }]
+keywords = ["soc", "blue-team", "security", "log-analysis", "dfir", "siem"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Information Technology",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Security",
+  "Typing :: Typed",
+]
+dependencies = [
+  # Typer 0.29 reworks boolean option rendering and validation messages; pin to
+  # the last release with the polished Click-based help users see here.
+  "typer>=0.12.3,<0.29",
+  "rich>=13.7.1",
+  "PyYAML>=6.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+  "pytest-cov>=5.0",
+  "ruff>=0.5",
+  "black>=24.4",
+  "mypy>=1.10",
+  "types-PyYAML>=6.0.12",
+  "build>=1.2",
+]
+
+[project.scripts]
+socsift = "socsift.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "socsift.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"socsift.rules" = ["builtin/*.yaml"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "PT"]
+
+[tool.ruff.lint.per-file-ignores]
+# Typer's documented API uses typer.Option()/typer.Argument() in signatures.
+"src/socsift/commands/*.py" = ["B008"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+source = ["socsift"]
+branch = true
+
+[tool.mypy]
+python_version = "3.10"
+mypy_path = "src"
+packages = ["socsift"]

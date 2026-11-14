@@ -1,0 +1,41 @@
+id: SSH-BRUTE-001
+title: SSH brute-force authentication failures
+description: >-
+  Multiple failed SSH authentication attempts from one source address in a
+  short window. This is consistent with password guessing or credential
+  spraying against an exposed SSH service.
+severity: high
+status: stable
+author: SOCSift
+date: "2026-11-14"
+logsource:
+  product: linux
+  service: sshd
+detection:
+  condition: threshold
+  selection:
+    outcome: failure
+  threshold:
+    count: 5
+    window: 5m
+    group_by:
+      - source_ip
+mitre:
+  tactic: Credential Access
+  technique: T1110
+  technique_name: Brute Force
+  subtechnique: T1110.001
+  url: https://attack.mitre.org/techniques/T1110/001/
+falsepositives:
+  - A user repeatedly mistyping a password from a shared or NAT address.
+  - An approved vulnerability scanner or stale backup credential.
+recommended_actions:
+  - Confirm whether the source IP is external and expected for this environment.
+  - Check for a successful authentication from the same source within the window.
+  - Escalate to N2 if the source is external or a valid account is involved.
+references:
+  - https://attack.mitre.org/techniques/T1110/001/
+tags:
+  - attack.credential_access
+  - attack.t1110.001
+  - protocol.ssh

@@ -1,0 +1,40 @@
+id: SSH-ROOT-001
+title: Direct root SSH login attempt
+description: >-
+  An SSH authentication attempt targeted the root account directly. Direct
+  root login weakens accountability and is a high-value target for attackers.
+  Accepted root logins require immediate review.
+severity: high
+status: stable
+author: SOCSift
+date: "2026-11-14"
+logsource:
+  product: linux
+  service: sshd
+detection:
+  condition: selection
+  selection:
+    username: root
+    outcome:
+      - success
+      - failure
+mitre:
+  tactic: Initial Access
+  technique: T1078
+  technique_name: Valid Accounts
+  subtechnique: T1078.003
+  url: https://attack.mitre.org/techniques/T1078/003/
+falsepositives:
+  - Approved emergency maintenance from a documented jump host.
+  - A configuration-management or backup account incorrectly configured as root.
+recommended_actions:
+  - Verify the source against the change record or approved admin jump hosts.
+  - If the login succeeded, review the root session and escalate to N2.
+  - Recommend sudo from named accounts and disabling direct root SSH access.
+references:
+  - https://attack.mitre.org/techniques/T1078/003/
+tags:
+  - attack.initial_access
+  - attack.t1078.003
+  - protocol.ssh
+  - account.root
