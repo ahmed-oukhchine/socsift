@@ -20,6 +20,10 @@ THEME = Theme(
         "sev.medium": "yellow",
         "sev.high": "bold red",
         "sev.critical": "bold white on red",
+        "pri.p1": "bold white on red",
+        "pri.p2": "bold bright_red",
+        "pri.p3": "yellow",
+        "pri.p4": "cyan",
     }
 )
 

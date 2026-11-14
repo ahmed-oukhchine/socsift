@@ -15,10 +15,10 @@ from rich.table import Table
 from rich.text import Text
 
 from socsift.console import THEME
-from socsift.detection.models import Alert
-from socsift.enums import Severity
+from socsift.enums import Priority, Severity, SortOrder
 from socsift.events import Event
 from socsift.parsers.base import ParseResult
+from socsift.risk.models import ScoredAlert
 
 _SEVERITY_BORDER = {
     Severity.CRITICAL: "red",
@@ -26,6 +26,12 @@ _SEVERITY_BORDER = {
     Severity.MEDIUM: "yellow",
     Severity.LOW: "cyan",
     Severity.INFO: "dim",
+}
+
+_SORT_LABEL = {
+    SortOrder.RISK: "risk score (highest first)",
+    SortOrder.SEVERITY: "severity, then score",
+    SortOrder.TIME: "first seen (oldest first)",
 }
 
 
@@ -38,13 +44,16 @@ class AnalysisReport:
     parse_result: ParseResult
     rules_label: str
     rule_count: int
-    alerts: tuple[Alert, ...]
+    alerts: tuple[ScoredAlert, ...]
     min_severity: Severity
+    sort_order: SortOrder = SortOrder.RISK
+    min_score: int = 0
+    explain: bool = False
     title: str = "ANALYSIS REPORT"
     clean_message: str = "No alerts matched the loaded rules."
 
 
-def _severity_counts(alerts: tuple[Alert, ...]) -> str:
+def _severity_counts(alerts: tuple[ScoredAlert, ...]) -> str:
     counts = Counter(alert.severity for alert in alerts)
     return " · ".join(
         f"{counts[severity]} {severity.value}"
@@ -53,7 +62,20 @@ def _severity_counts(alerts: tuple[Alert, ...]) -> str:
     )
 
 
-def _format_time_range(alert: Alert) -> str:
+def _priority_counts(alerts: tuple[ScoredAlert, ...]) -> str:
+    counts = Counter(alert.risk.priority for alert in alerts)
+    return " · ".join(
+        f"{counts[priority]} {priority.label}" for priority in Priority if counts[priority]
+    )
+
+
+def _driver_summary(alert: ScoredAlert, limit: int = 3) -> str:
+    """Return the highest-value factor details for the compact panel line."""
+    ranked = sorted(alert.risk.factors, key=lambda factor: factor.points, reverse=True)
+    return " · ".join(factor.detail for factor in ranked[:limit])
+
+
+def _format_time_range(alert: ScoredAlert) -> str:
     first = alert.first_seen
     last = alert.last_seen
     if first == last:
@@ -64,12 +86,12 @@ def _format_time_range(alert: Alert) -> str:
 
 
 def _append_meta(text: Text, label: str, value: str, *, style: str = "white") -> None:
-    text.append(f"{label:<8}", style="muted")
+    text.append(f"{label:<9}", style="muted")
     text.append(value, style=style)
     text.append("\n")
 
 
-def _evidence_events(alert: Alert, limit: int = 4) -> tuple[tuple[Event, ...], int]:
+def _evidence_events(alert: ScoredAlert, limit: int = 4) -> tuple[tuple[Event, ...], int]:
     if len(alert.events) <= limit:
         return alert.events, 0
     head = alert.events[:2]
@@ -77,15 +99,46 @@ def _evidence_events(alert: Alert, limit: int = 4) -> tuple[tuple[Event, ...], i
     return (*head, *tail), len(alert.events) - limit
 
 
-def _alert_content(alert: Alert, *, message_width: int = 90) -> Text:
+def _append_risk_breakdown(text: Text, alert: ScoredAlert) -> None:
+    """Append the full, auditable factor list used by ``--explain``."""
+    text.append("\n")
+    text.append("RISK BREAKDOWN", style="bold")
+    text.append("\n")
+    for factor in alert.risk.factors:
+        text.append(f"  +{factor.points:<3}", style="brand")
+        text.append(f"{factor.detail}\n", style="white")
+    priority = alert.risk.priority
+    total = f"  = {alert.risk.score}/100 · {priority.label} · {priority.guidance}"
+    if alert.risk.capped:
+        total += f" (raw {alert.risk.raw}, capped at 100)"
+    text.append(total, style="bold white")
+    text.append("\n")
+
+
+def _alert_content(
+    alert: ScoredAlert,
+    *,
+    message_width: int = 90,
+    explain: bool = False,
+) -> Text:
+    priority = alert.risk.priority
     text = Text()
     text.append(alert.severity.value.upper(), style=f"sev.{alert.severity.value}")
+    text.append("  ")
+    text.append(f"{alert.risk.score}/100", style="brand")
     text.append("  ")
     text.append(alert.rule.id, style="brand")
     text.append("  ")
     text.append(alert.rule.title, style="bold white")
     text.append("\n\n")
 
+    _append_meta(
+        text,
+        "priority",
+        f"{priority.label} · {priority.guidance}",
+        style=f"pri.{priority.value}",
+    )
+    _append_meta(text, "drivers", _driver_summary(alert))
     _append_meta(text, "time", _format_time_range(alert))
     _append_meta(text, "source", ", ".join(alert.source_ips) or "-")
     _append_meta(text, "user", ", ".join(alert.usernames) or "-")
@@ -116,18 +169,25 @@ def _alert_content(alert: Alert, *, message_width: int = 90) -> Text:
         f"{alert.rule.mitre.technique_id} · {alert.rule.mitre.technique_name}",
     )
     _append_meta(text, "NEXT", alert.rule.recommended_actions[0])
+
+    if explain:
+        _append_risk_breakdown(text, alert)
     return text
 
 
 def render_alert_panels(
-    console: Console, alerts: tuple[Alert, ...], *, label: str = "ALERT"
+    console: Console,
+    alerts: tuple[ScoredAlert, ...],
+    *,
+    label: str = "ALERT",
+    explain: bool = False,
 ) -> None:
     """Print one evidence panel per alert."""
     total = len(alerts)
     message_width = max(40, console.width - 24)
     for index, alert in enumerate(alerts, start=1):
         panel = Panel(
-            _alert_content(alert, message_width=message_width),
+            _alert_content(alert, message_width=message_width, explain=explain),
             title=Text(f"{label} {index}/{total}", style="muted"),
             title_align="left",
             border_style=_SEVERITY_BORDER[alert.severity],
@@ -161,7 +221,11 @@ def render_summary(console: Console, report: AnalysisReport) -> None:
     )
     meta.add_row("skipped", f"{result.skipped_lines} non-SSH or unparsed line(s)")
     meta.add_row("rules", f"{report.rule_count} from {report.rules_label}")
-    meta.add_row("filter", f"minimum severity {report.min_severity.value}")
+    filter_text = f"minimum severity {report.min_severity.value}"
+    if report.min_score:
+        filter_text += f" · minimum score {report.min_score}"
+    meta.add_row("filter", filter_text)
+    meta.add_row("rank", _SORT_LABEL[report.sort_order])
     console.print(Padding(meta, (0, 0, 0, 2)))
 
     if result.issues:
@@ -177,6 +241,7 @@ def render_summary(console: Console, report: AnalysisReport) -> None:
             f"  [bold]{len(report.alerts)} {alert_label}[/]  "
             f"[muted]{_severity_counts(report.alerts)}[/]"
         )
+        console.print(f"  [muted]priority  {_priority_counts(report.alerts)}[/]")
     else:
         console.print(f"  [ok]✓[/] [muted]{report.clean_message}[/]")
 
@@ -189,8 +254,14 @@ def render_analysis(console: Console, report: AnalysisReport) -> None:
         return
 
     console.print()
-    render_alert_panels(console, report.alerts)
-    console.print("  [muted]Inspect rule context with[/] " "[bold]socsift rules show <ID>[/]")
+    render_alert_panels(console, report.alerts, explain=report.explain)
+    if report.explain:
+        console.print("  [muted]Inspect rule context with[/] " "[bold]socsift rules show <ID>[/]")
+    else:
+        console.print(
+            "  [muted]Add[/] [bold]--explain[/] [muted]to see every score factor, "
+            "or inspect rule context with[/] [bold]socsift rules show <ID>[/]"
+        )
     console.print()
 
 
@@ -227,4 +298,6 @@ def render_written_confirmation(console: Console, report: AnalysisReport, path: 
         + (f" · {_severity_counts(report.alerts)}" if report.alerts else "")
         + "[/]"
     )
+    if report.alerts:
+        console.print(f"  [muted]priority  {_priority_counts(report.alerts)}[/]")
     console.print()

@@ -4,9 +4,9 @@
 
 SOCSift is an offline-first command-line workbench for SOC analysts, built in
 phases. The current build normalizes OpenSSH `auth.log` evidence, runs strict
-Sigma-inspired YAML detections, and prints qualified alerts with raw evidence.
-Later phases add risk scoring, correlation, reports, cases, and a live watch
-dashboard.
+Sigma-inspired YAML detections, scores every alert from named risk factors, and
+prints a prioritized queue with raw evidence. Later phases add correlation,
+reports, cases, and a live watch dashboard.
 
 Built as a portfolio project for a **SOC Analyst L1** role: log analysis, alert
 qualification, ticket hygiene, escalation to N2/N3, Windows/Linux and Active
@@ -14,15 +14,15 @@ Directory fundamentals, and procedure-driven work.
 
 ## Build status
 
-**Phase 3 of 12 — detection engine complete.**
+**Phase 4 of 12 — explainable risk scoring complete.**
 
 | Phase | Scope | Status |
 | --- | --- | --- |
 | 1 | Package skeleton, install, banner, help, version, exit codes | Done |
 | 2 | Sample logs, SSH parser, YAML rule loader | Done |
 | 3 | Detection engine, starter rules, terminal output | Done |
-| 4 | Risk scoring, alert explanation, prioritization | Next |
-| 5 | Correlation engine and incidents | Planned |
+| 4 | Risk scoring, alert explanation, prioritization | Done |
+| 5 | Correlation engine and incidents | Next |
 | 6 | Text, Markdown, JSON, HTML, CSV reports | Planned |
 | 7 | Windows events and expanded rules | Planned |
 | 8 | SQLite cases and ticket export | Planned |
@@ -38,6 +38,10 @@ message until their phase lands. This keeps the command contract stable.
 
 - `socsift analyze` parses SSH evidence, runs the four built-in rules, prints
   evidence-rich alert cards, and exits `1` when alerts are produced.
+- Every alert carries a deterministic 0-100 risk score, a P1-P4 priority, the
+  top drivers, and an optional full factor breakdown with `--explain`.
+- Alerts are ranked by risk score by default; `--sort severity|time` changes
+  the queue order, and `--min-score` hides alerts below a score floor.
 - Selection alerts are aggregated per host, source, and user. Threshold rules
   emit one burst alert per source group instead of one alert per event.
 - Sequence rules look for a successful follow-up inside the configured window.
@@ -46,7 +50,7 @@ message until their phase lands. This keeps the command contract stable.
 - `socsift rules list` lists built-in or custom rules with severity and
   detection type.
 - `socsift rules show <ID>` explains the selection, threshold, MITRE mapping,
-  false positives, and recommended actions of one rule.
+  severity risk base, false positives, and recommended actions of one rule.
 - `socsift rules validate <path>` strictly validates one YAML file or a whole
   rule directory, including duplicate IDs.
 - `socsift rules test <ID> -i FILE` runs one rule against one log and prints
@@ -88,18 +92,21 @@ $ socsift
 $ socsift --help
 $ socsift analyze --help
 $ socsift --version
-socsift 0.3.0
+socsift 0.4.0
 ```
 
-Run the detection engine:
+Run the detection engine and read the risk-ranked queue:
 
 ```bash
 socsift analyze -i sample_logs/ssh_auth.log -t ssh
 socsift analyze -t ssh < sample_logs/ssh_auth.log
 socsift analyze -i sample_logs/ssh_auth.log -s high
+socsift analyze -i sample_logs/ssh_auth.log --explain
+socsift analyze -i sample_logs/ssh_auth.log --min-score 70
+socsift analyze -i sample_logs/ssh_auth.log --sort time
 socsift analyze -i sample_logs/ssh_auth.log -r ./my-rules
 socsift analyze -i sample_logs/ssh_auth.log -o triage-report.txt
-socsift rules test SSH-BRUTE-001 -i sample_logs/ssh_auth.log
+socsift rules test SSH-BRUTE-001 -i sample_logs/ssh_auth.log --explain
 ```
 
 Only the `text` format is available in this build. JSON, Markdown, HTML, and
@@ -194,6 +201,42 @@ How `analyze` applies them:
 - A rule's `logsource.service` must match the parser. The SSH parser accepts
   both `ssh` and `sshd` so rules remain readable.
 
+## Risk scoring
+
+Severity answers “how bad would this be if true?”. Risk score answers “how
+urgent is this alert with the evidence I have?”. SOCSift builds the score from
+named factors, clamps it to 0-100, and shows every contribution with
+`--explain`.
+
+| Factor | Points | What earns them |
+| --- | --- | --- |
+| Severity base | 0 / 15 / 30 / 50 / 70 | Rule severity: info, low, medium, high, critical |
+| Correlation | +5 / +10 | Threshold match / sequence match |
+| Volume | +1 per event after the first, max +6 | More evidence in the same alert |
+| Access | +10 | A successful authentication appears in the evidence |
+| Exposure | +8 | At least one source is outside RFC 1918, loopback, link-local, and IPv6 ULA space |
+| Asset | +4 / +8 | Server-style hostname / critical hostname (DC, DB, VPN, jump host, ...) |
+| Account | +6 | A real login attempt targets root, admin, or another privileged account |
+| Breadth | +4 | The alert spans more than one host |
+
+Priority bands turn the score into queue language:
+
+| Score | Priority | Meaning |
+| --- | --- | --- |
+| 85-100 | P1 | Triage immediately |
+| 60-84 | P2 | Work in the same shift |
+| 35-59 | P3 | Queue after P1 and P2 |
+| 0-34 | P4 | Monitor and batch |
+
+The score never subtracts points: the absence of a factor is the signal. An
+internal-only source, a workstation hostname, or a non-privileged account simply
+does not add exposure, asset, or account points. That makes a ticket easy to
+defend: “100/100, P1, because rule severity critical, a successful login
+followed failures, and an external source on a web server.”
+
+`--min-score` filters after scoring, so `socsift analyze --min-score 85` shows
+only P1 work. The exit code still reflects the alerts that survive the filter.
+
 ## Known limits
 
 - Only the OpenSSH parser is available; Windows, web, and generic syslog
@@ -202,6 +245,9 @@ How `analyze` applies them:
   in Phase 6.
 - `--enrich` and `--config` are reserved and fail with a clear message instead
   of silently doing nothing.
+- Risk weights and hostname heuristics are fixed in this build. An
+  organization-specific asset inventory and configurable weights arrive with
+  configuration support.
 - Automated tests and CI are intentionally deferred to Phase 11.
 
 ## Sample data
@@ -226,7 +272,7 @@ need a diagnostic traceback for an unexpected failure.
 
 | Command | Purpose |
 | --- | --- |
-| `analyze` | Detect and qualify alerts in one log source or stdin |
+| `analyze` | Detect, score, and prioritize alerts in one log source or stdin |
 | `parse` | Preview normalized events and ingestion coverage |
 | `watch` | Live terminal alert feed and counters (Phase 10) |
 | `correlate` | Merge several sources into incidents (Phase 5) |

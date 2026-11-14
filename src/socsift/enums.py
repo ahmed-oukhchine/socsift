@@ -56,6 +56,41 @@ _SEVERITY_RANK = {
 }
 
 
+class Priority(_ValueEnum):
+    """Operational triage order derived from the 0-100 risk score."""
+
+    P1 = "p1"
+    P2 = "p2"
+    P3 = "p3"
+    P4 = "p4"
+
+    @property
+    def label(self) -> str:
+        """Return the analyst-facing label (``P1``)."""
+        return self.value.upper()
+
+    @property
+    def guidance(self) -> str:
+        """Return the short action associated with the band."""
+        return _PRIORITY_GUIDANCE[self]
+
+
+_PRIORITY_GUIDANCE = {
+    Priority.P1: "triage immediately",
+    Priority.P2: "work in the same shift",
+    Priority.P3: "queue after P1 and P2",
+    Priority.P4: "monitor and batch",
+}
+
+
+class SortOrder(_ValueEnum):
+    """Alert ordering modes accepted by ``analyze --sort``."""
+
+    RISK = "risk"
+    SEVERITY = "severity"
+    TIME = "time"
+
+
 class EscalationLevel(_ValueEnum):
     """Analyst tier a case can be escalated to."""
 

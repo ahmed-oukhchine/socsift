@@ -8,7 +8,7 @@ import typer
 
 from socsift.console import console, print_error
 from socsift.detection.engine import detect
-from socsift.enums import LogType, OutputFormat, Severity
+from socsift.enums import LogType, OutputFormat, Severity, SortOrder
 from socsift.exit_codes import ExitCode
 from socsift.parsers import UnsupportedLogTypeError, parse_events
 from socsift.reporting.text import (
@@ -17,6 +17,7 @@ from socsift.reporting.text import (
     render_written_confirmation,
     write_text_report,
 )
+from socsift.risk.scoring import score_alert, sort_alerts
 from socsift.rules.loader import RuleError, load_builtin_rules, load_rules_path
 from socsift.sources import read_lines
 
@@ -71,6 +72,25 @@ def analyze(
         metavar="LEVEL",
         help="Minimum severity: info, low, medium, high, or critical.",
         case_sensitive=False,
+    ),
+    min_score: int = typer.Option(
+        0,
+        "--min-score",
+        min=0,
+        max=100,
+        help="Only keep alerts at or above this 0-100 risk score.",
+    ),
+    sort_order: SortOrder = typer.Option(
+        SortOrder.RISK,
+        "--sort",
+        metavar="ORDER",
+        help="Alert order: risk, severity, or time.",
+        case_sensitive=False,
+    ),
+    explain: bool = typer.Option(
+        False,
+        "--explain",
+        help="Show every risk-score factor for each alert.",
     ),
     config_path: Path | None = typer.Option(
         None,
@@ -133,6 +153,14 @@ def analyze(
         raise typer.Exit(ExitCode.ERROR) from exc
 
     alerts = detect(result.events, rules, min_severity=min_severity)
+    scored = [score_alert(alert) for alert in alerts]
+    if min_score:
+        scored = [item for item in scored if item.risk.score >= min_score]
+    scored = sort_alerts(scored, sort_order)
+
+    clean_message = "No alerts matched the loaded rules."
+    if alerts and not scored:
+        clean_message = "Every alert was filtered out by the severity or score floor."
 
     format_label = result.events[0].log_source
     if log_type is LogType.AUTO:
@@ -144,8 +172,12 @@ def analyze(
         parse_result=result,
         rules_label=str(rules_path) if rules_path is not None else "built-in",
         rule_count=len(rules),
-        alerts=tuple(alerts),
+        alerts=tuple(scored),
         min_severity=min_severity,
+        sort_order=sort_order,
+        min_score=min_score,
+        explain=explain,
+        clean_message=clean_message,
     )
 
     if output_path is not None:
@@ -162,4 +194,4 @@ def analyze(
     else:
         render_analysis(console, report)
 
-    raise typer.Exit(ExitCode.ALERTS if alerts else ExitCode.CLEAN)
+    raise typer.Exit(ExitCode.ALERTS if scored else ExitCode.CLEAN)

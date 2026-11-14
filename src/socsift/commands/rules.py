@@ -13,10 +13,11 @@ from rich.text import Text
 
 from socsift.console import console, print_error
 from socsift.detection.engine import detect
-from socsift.enums import LogType, Severity
+from socsift.enums import LogType, Severity, SortOrder
 from socsift.exit_codes import ExitCode
 from socsift.parsers import UnsupportedLogTypeError, parse_events
 from socsift.reporting.text import AnalysisReport, render_analysis
+from socsift.risk.scoring import base_score, score_alert, sort_alerts
 from socsift.rules.loader import (
     RuleError,
     find_rule,
@@ -200,6 +201,10 @@ def show_rule(
     meta.add_row("log source", f"{rule.logsource['product']}/{rule.logsource['service']}")
     meta.add_row("detection", _condition_label(rule))
     meta.add_row(
+        "risk base",
+        f"{base_score(rule.severity)}/100 from severity {rule.severity.value}",
+    )
+    meta.add_row(
         "MITRE ATT&CK",
         f"{rule.mitre.technique_id} · {rule.mitre.technique_name} " f"({rule.mitre.tactic})",
     )
@@ -318,6 +323,11 @@ def run_rule_test(
         help="Rule file or directory. Defaults to the built-in library.",
         show_default=False,
     ),
+    explain: bool = typer.Option(
+        False,
+        "--explain",
+        help="Show every risk-score factor for each match.",
+    ),
 ) -> None:
     """Run one rule against a log and show every match."""
     rules = _load_or_fail(rules_path)
@@ -353,6 +363,7 @@ def run_rule_test(
         raise typer.Exit(ExitCode.ERROR)
 
     alerts = detect(result.events, [rule], min_severity=Severity.INFO)
+    scored = sort_alerts((score_alert(alert) for alert in alerts), SortOrder.RISK)
 
     format_label = result.events[0].log_source
     if log_type is LogType.AUTO:
@@ -364,10 +375,11 @@ def run_rule_test(
         parse_result=result,
         rules_label=str(rules_path) if rules_path is not None else "built-in",
         rule_count=1,
-        alerts=tuple(alerts),
+        alerts=tuple(scored),
         min_severity=Severity.INFO,
+        explain=explain,
         title="RULE TEST",
         clean_message=f"No events matched {rule.id}.",
     )
     render_analysis(console, report)
-    raise typer.Exit(ExitCode.ALERTS if alerts else ExitCode.CLEAN)
+    raise typer.Exit(ExitCode.ALERTS if scored else ExitCode.CLEAN)

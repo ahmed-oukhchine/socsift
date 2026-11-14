@@ -6,6 +6,36 @@ All notable changes to SOCSift are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
+### Added
+
+- Deterministic, explainable 0-100 risk scoring for every alert, built from
+  named factors: severity base, detection correlation, evidence volume,
+  successful access, external exposure, asset criticality, privileged account,
+  and host breadth.
+- P1-P4 priority bands with analyst guidance, shown in alert panels and the
+  report summary.
+- `ScoredAlert` wrapper and `socsift.risk` package keeping detection separate
+  from prioritization.
+- `socsift analyze --explain` prints the full additive factor breakdown,
+  including the raw total when the 100-point ceiling is reached.
+- `socsift analyze --min-score` filters alerts by risk score.
+- `socsift analyze --sort risk|severity|time` changes queue ordering; risk is
+  the default.
+- `socsift rules test --explain` shows the same risk context for individual
+  rule development.
+- `rules show` now displays the severity risk base for each rule.
+- README risk-scoring reference with factor weights and priority bands.
+
+### Changed
+
+- Version bumped to `0.4.0`.
+- Alert panels now show the score, priority, and top three scoring drivers.
+- Alert reports are ordered by risk score, then severity, then time.
+- Privileged-account points only count real authentication attempts, not
+  invalid usernames seen during enumeration.
+
 ## [0.3.0] - 2026-11-14
 
 ### Added

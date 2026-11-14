@@ -28,6 +28,8 @@ _VALUE_OPTIONS = frozenset(
         "--output",
         "-s",
         "--min-severity",
+        "--min-score",
+        "--sort",
         "-c",
         "--config",
         "-r",
